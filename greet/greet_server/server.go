@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/dfreilich/grpc-samples/greet/greetpb"
 
@@ -25,6 +26,23 @@ func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb
 	}
 
 	return res, nil
+}
+func (s *server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb.GreetService_GreetManyTimesServer) error {
+	firstName := req.GetGreeting().GetFirstName()
+	lastName := req.GetGreeting().GetLastName()
+	for i := 0; i < 10; i++ {
+		result := fmt.Sprintf("Hello %s %s! This is your %d message", firstName, lastName, i)
+		res := &greetpb.GreetManyTimesResponse{
+			Result: result,
+		}
+		err := stream.Send(res)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to send response %v", res))
+		}
+		time.Sleep(1000 * time.Millisecond)
+	}
+
+	return nil
 }
 
 const address = "0.0.0.0"
