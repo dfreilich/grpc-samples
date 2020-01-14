@@ -6,7 +6,12 @@ message SumRequest { repeated sint32 nums = 1; }
 
 message SumResponse { sint32 sum_result = 1; }
 
+message PrimeNumberDecompositionRequest { sint32 num = 1; }
+message PrimeNumberDecompositionResponse { sint32 prime_factor = 1; }
+
 service CalculatorService {
   // Unary
   rpc Sum(SumRequest) returns (SumResponse) {};
+  rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest)
+      returns (stream PrimeNumberDecompositionResponse) {};
 }
