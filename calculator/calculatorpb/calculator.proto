@@ -9,9 +9,15 @@ message SumResponse { sint32 sum_result = 1; }
 message PrimeNumberDecompositionRequest { sint32 num = 1; }
 message PrimeNumberDecompositionResponse { sint32 prime_factor = 1; }
 
+message ComputeAverageRequest { int32 num = 1; }
+
+message ComputeAverageResponse { double average = 1; }
+
 service CalculatorService {
   // Unary
   rpc Sum(SumRequest) returns (SumResponse) {};
   rpc PrimeNumberDecomposition(PrimeNumberDecompositionRequest)
       returns (stream PrimeNumberDecompositionResponse) {};
+  rpc ComputeAverage(stream ComputeAverageRequest)
+      returns (ComputeAverageResponse) {};
 }

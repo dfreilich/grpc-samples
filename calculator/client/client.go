@@ -34,7 +34,8 @@ func run() error {
 	fmt.Println("Created client")
 
 	// return doUnarySum(c)
-	return doPrimeNumberDecomposition(c)
+	// return doPrimeNumberDecomposition(c)
+	return doClientStreamingComputeAverage(c)
 }
 
 func doUnarySum(c calculatorpb.CalculatorServiceClient) error {
@@ -51,7 +52,7 @@ func doUnarySum(c calculatorpb.CalculatorServiceClient) error {
 	return nil
 }
 
-func doPrimeNumberDecomposition(c calculatorpb.CalculatorServiceClient) error {
+func doServerStreamingPrimeNumberDecomp(c calculatorpb.CalculatorServiceClient) error {
 	fmt.Println("Starting to do Server Streaming RPC call for Prime Number Decomposition...")
 	req := &calculatorpb.PrimeNumberDecompositionRequest{
 		Num: int32(1241252343),
@@ -70,6 +71,30 @@ func doPrimeNumberDecomposition(c calculatorpb.CalculatorServiceClient) error {
 		}
 		fmt.Printf("Next factor: %v\n", res.GetPrimeFactor())
 	}
+
+	return nil
+}
+
+func doClientStreamingComputeAverage(c calculatorpb.CalculatorServiceClient) error {
+	fmt.Println("Starting to do ComputerAverage RPC")
+
+	stream, err := c.ComputeAverage(context.Background())
+	if err != nil {
+		return errors.Wrap(err, "error creating ComputeAverage stream")
+	}
+
+	nums := []int32{3, 5, 9, 54, 23}
+	for _, num := range nums {
+		stream.Send(&calculatorpb.ComputeAverageRequest{
+			Num: num,
+		})
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		return errors.Wrap(err, "failed to receive response for ComputeAverage")
+	}
+	fmt.Printf("Computed Averaged: %v\n", res.GetAverage())
 
 	return nil
 }
