@@ -65,6 +65,28 @@ func (s server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	}
 }
 
+func (s server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	fmt.Println("Starting GreetEveryone method")
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return errors.Wrap(err, "error while reading the client stream")
+		}
+		firstName := req.GetGreeting().GetFirstName()
+		result := "Hello " + firstName + "!"
+
+		err = stream.Send(&greetpb.GreetEveryoneResponse{
+			Result: result,
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to send data to client")
+		}
+	}
+}
+
 const address = "0.0.0.0"
 const port = "50051"
 
