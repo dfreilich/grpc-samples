@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"github.com/dfreilich/grpc-samples/calculator/calculatorpb"
 	"github.com/pkg/errors"
@@ -35,7 +36,8 @@ func run() error {
 
 	// return doUnarySum(c)
 	// return doPrimeNumberDecomposition(c)
-	return doClientStreamingComputeAverage(c)
+	// return doClientStreamingComputeAverage(c)
+	return doBiDiStreamingFindMaximum(c)
 }
 
 func doUnarySum(c calculatorpb.CalculatorServiceClient) error {
@@ -97,4 +99,49 @@ func doClientStreamingComputeAverage(c calculatorpb.CalculatorServiceClient) err
 	fmt.Printf("Computed Averaged: %v\n", res.GetAverage())
 
 	return nil
+}
+
+func doBiDiStreamingFindMaximum(c calculatorpb.CalculatorServiceClient) error {
+	fmt.Println("Starting to do BiDi Streaming for Finding Maximum")
+
+	stream, err := c.FindMaximum(context.Background())
+	if err != nil {
+		return errors.Wrap(err, "failed to start Find Maximum stream")
+	}
+
+	waitc := make(chan struct{})
+
+	nums := []int32{1, 5, 3, 6, 2, 20}
+	go func() {
+		for _, num := range nums {
+			fmt.Printf("Sending %d\n", num)
+			err := stream.Send(&calculatorpb.FindMaximumRequest{
+				Num: num,
+			})
+			if err != nil {
+				log.Fatalf("Err! %v", err)
+				break
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		stream.CloseSend()
+	}()
+
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				log.Fatalf("Failed to receive: %v", err)
+				break
+			}
+			fmt.Printf("Current Max: %d\n", res.GetCurrentMaximum())
+		}
+		close(waitc)
+	}()
+
+	<-waitc
+	return nil
+
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 
 	"github.com/dfreilich/grpc-samples/calculator/calculatorpb"
@@ -14,17 +15,6 @@ import (
 
 const address = "0.0.0.0"
 const port = "50051"
-
-/*
-
-The function takes a Request message that has two integers, and returns a Response that represents the sum of them.
-Remember to first implement the service definition in a .proto file, alongside the RPC messages
-Implement the Server code first
-Test the server code by implementing the Client
-Example:
-
-The client will send two numbers (3 and 10) and the server will respond with (13)
-*/
 
 type server struct{}
 
@@ -81,6 +71,37 @@ func (s server) ComputeAverage(stream calculatorpb.CalculatorService_ComputeAver
 		sum += req.GetNum()
 		count++
 	}
+}
+
+func (s server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumServer) error {
+	fmt.Println("Starting FindMaximum method")
+
+	maximum := int32(math.MinInt32)
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		} else if err != nil {
+			return errors.Wrap(err, "error receiving message")
+		}
+		num := req.GetNum()
+		maximum = max(maximum, num)
+
+		sendErr := stream.Send(&calculatorpb.FindMaximumResponse{
+			CurrentMaximum: maximum,
+		})
+		if sendErr != nil {
+			return errors.Wrap(err, "failed to send current maximum")
+		}
+	}
+}
+
+func max(x, y int32) int32 {
+	if x >= y {
+		return x
+	}
+	return y
 }
 
 func main() {
