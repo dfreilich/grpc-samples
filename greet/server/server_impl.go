@@ -8,6 +8,8 @@ import (
 
 	"github.com/dfreilich/grpc-samples/greet/greetpb"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Server Implementation for Greet RPC Calls
@@ -86,4 +88,25 @@ func (s Server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) e
 			return errors.Wrap(err, "failed to send data to client")
 		}
 	}
+}
+
+// GreetWithDeadline is a unary RPC call to get a name, and send the appropriate greeting, with a deadline
+func (s Server) GreetWithDeadline(ctx context.Context, req *greetpb.GreetWithDeadlineRequest) (*greetpb.GreetWithDeadlineResponse, error) {
+	fmt.Printf("GreetWithDeadline function was invoked with %v\n", req)
+	for i := 0; i < 3; i++ {
+		if ctx.Err() == context.Canceled {
+			fmt.Println("The client canceled the request")
+			return nil, status.Error(codes.Canceled, "client cancelled the request")
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	first := req.GetGreeting().GetFirstName()
+	last := req.GetGreeting().GetLastName()
+	result := "Hello, " + first + " " + last
+	res := &greetpb.GreetWithDeadlineResponse{
+		Result: result,
+	}
+
+	return res, nil
 }
