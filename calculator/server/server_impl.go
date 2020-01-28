@@ -8,6 +8,8 @@ import (
 
 	"github.com/dfreilich/grpc-samples/calculator/calculatorpb"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Server Implementation for Calculator Proto
@@ -95,4 +97,18 @@ func (s Server) FindMaximum(stream calculatorpb.CalculatorService_FindMaximumSer
 			}
 		}
 	}
+}
+
+// SquareRoot is a unary RPC call, returning the square root of a number
+func (s Server) SquareRoot(ctx context.Context, req *calculatorpb.SquareRootRequest) (*calculatorpb.SquareRootResponse, error) {
+	fmt.Println("Received SquareRoot RPC")
+
+	number := req.GetNumber()
+	if number < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Received a negative number: %v", number))
+	}
+
+	return &calculatorpb.SquareRootResponse{
+		NumberRoot: math.Sqrt(float64(number)),
+	}, nil
 }
