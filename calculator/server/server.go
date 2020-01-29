@@ -8,6 +8,7 @@ import (
 	"github.com/dfreilich/grpc-samples/calculator/calculatorpb"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 const address = "0.0.0.0"
@@ -30,6 +31,7 @@ func run() error {
 
 	s := grpc.NewServer()
 	calculatorpb.RegisterCalculatorServiceServer(s, &Server{})
+	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
 		return errors.Wrap(err, "failed to serve")
 	}

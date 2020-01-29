@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/pkg/errors"
 )
@@ -40,6 +41,7 @@ func run() error {
 	s := grpc.NewServer(opts)
 
 	greetpb.RegisterGreetServiceServer(s, &Server{})
+	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
 		return errors.Wrap(err, "failed to serve")
 	}
