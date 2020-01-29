@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -32,7 +33,13 @@ func main() {
 }
 
 func run() error {
-	cc, err := grpc.Dial(fmt.Sprintf("%s:%s", address, port), grpc.WithInsecure())
+	certFile := "ssl/ca.crt"
+	creds, err := credentials.NewClientTLSFromFile(certFile, "")
+	if err != nil {
+		return errors.Wrap(err, "error while loading CA trust certificates")
+	}
+	opts := grpc.WithTransportCredentials(creds)
+	cc, err := grpc.Dial(fmt.Sprintf("%s:%s", address, port), opts)
 	if err != nil {
 		return errors.Wrap(err, "could not connect")
 	}
