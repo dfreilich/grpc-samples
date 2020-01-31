@@ -3,7 +3,7 @@ package main
 import "log"
 
 func main() {
-	log.Println("Starting client")
+	log.Println("Starting blog client")
 	if err := run(); err != nil {
 		log.Fatalf("failed to run: %v", err)
 	}
