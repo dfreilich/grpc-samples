@@ -15,7 +15,7 @@ const address = "0.0.0.0"
 const port = "50051"
 
 func main() {
-	log.Println("Running calculator server")
+	log.Println("Running calculator RPC server")
 	if err := run(); err != nil {
 		log.Fatalf("Failed to run: %v\n", err)
 	}

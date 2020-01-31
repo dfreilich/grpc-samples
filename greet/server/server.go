@@ -18,7 +18,7 @@ const address = "0.0.0.0"
 const port = "50051"
 
 func main() {
-	fmt.Println("Running server!")
+	fmt.Println("Running greet RPC server!")
 	if err := run(); err != nil {
 		log.Fatalf("Failed to run: %v", err)
 	}
