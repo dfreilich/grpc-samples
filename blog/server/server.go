@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -9,13 +10,17 @@ import (
 
 	"github.com/dfreilich/grpc-samples/blog/blogpb"
 	blog "github.com/dfreilich/grpc-samples/blog/server/impl"
+	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 const address = "0.0.0.0"
 const port = "50051"
+
+var collection *mongo.Collection
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -28,6 +33,20 @@ func main() {
 }
 
 func run() error {
+	fmt.Println("Connecting to MongoDB")
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	if err != nil {
+		return errors.Wrap(err, "failed to create Mongo client")
+	}
+	defer client.Disconnect(context.TODO())
+
+	err = client.Connect(context.TODO())
+	if err != nil {
+		return errors.Wrap(err, "failed to connect to the client")
+	}
+
+	collection = client.Database("mydb").Collection("blog")
+
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", address, port))
 	if err != nil {
 		return errors.Wrap(err, "failed to listen")
@@ -38,7 +57,9 @@ func run() error {
 	opts := []grpc.ServerOption{}
 	s := grpc.NewServer(opts...)
 
-	blogpb.RegisterBlogServiceServer(s, &blog.Server{})
+	blogpb.RegisterBlogServiceServer(s, &blog.Server{
+		Collection: collection,
+	})
 	reflection.Register(s)
 
 	go func() {
