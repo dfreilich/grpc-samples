@@ -6,6 +6,7 @@ import (
 
 	"github.com/dfreilich/grpc-samples/blog/blogpb"
 	"github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -45,11 +46,49 @@ func (s Server) CreateBlog(ctx context.Context, req *blogpb.CreateBlogRequest) (
 	}
 
 	return &blogpb.CreateBlogResponse{
-		Blog: &blogpb.Blog{
-			Id	:       objectID.Hex(),
-			AuthorId: blog.GetAuthorId(),
-			Content:  blog.GetContent(),
-			Title:    blog.GetTitle(),
-		},
+		Blog: convertItemToBlog(data, objectID.Hex()),
 	}, nil
+}
+
+// ReadBlog takes in a blog id, and returns a Blog
+func (s Server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*blogpb.ReadBlogResponse, error) {
+	fmt.Println("ReadBlog Request Received")
+
+	id := req.GetBlogId()
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Cannot parse ID: %v", id),
+		)
+	}
+
+	blog := &Item{}
+	filter := bson.M{"_id": oid}
+	res := s.Collection.FindOne(context.Background(), filter)
+	if err := res.Decode(blog); err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot find blog with specified ID: %v", id),
+		)
+	}
+
+	return &blogpb.ReadBlogResponse{
+		Blog: convertItemToBlog(*blog, ""),
+	}, nil
+}
+
+func convertItemToBlog(item Item, id string) *blogpb.Blog {
+	blog := blogpb.Blog{
+		Id:       item.ID.String(),
+		AuthorId: item.AuthorID,
+		Title:    item.Title,
+		Content:  item.Content,
+	}
+
+	if id != "" {
+		blog.Id = id
+	}
+
+	return &blog
 }

@@ -31,10 +31,20 @@ func run() error {
 	c := blogpb.NewBlogServiceClient(cc)
 	fmt.Println("Created client")
 
-	return doUnary(c)
+	blog, err := CreateBlog(c)
+	if err != nil {
+		return errors.Wrap(err, "failed to create blog")
+	}
+
+	if err := ReadBlog(c, *blog); err != nil {
+		return errors.Wrap(err, "failed to read blog")
+	}
+
+	return nil
 }
 
-func doUnary(c blogpb.BlogServiceClient) error {
+// CreateBlog creates a blog post
+func CreateBlog(c blogpb.BlogServiceClient) (*blogpb.Blog, error) {
 	fmt.Println("Starting to do CreateBlog RPC...")
 	in := &blogpb.Blog{
 		AuthorId: "David",
@@ -47,9 +57,26 @@ func doUnary(c blogpb.BlogServiceClient) error {
 	}
 	res, err := c.CreateBlog(context.Background(), req)
 	if err != nil {
-		return errors.Wrap(err, "error while calling CreateBlog RPC")
+		return nil, errors.Wrap(err, "error while calling CreateBlog RPC")
 	}
 
 	fmt.Printf("Response from CreateBlog: %v\n", res.GetBlog())
+	return res.GetBlog(), nil
+}
+
+// ReadBlog reads a blog post
+func ReadBlog(c blogpb.BlogServiceClient, blog blogpb.Blog) error {
+	req := &blogpb.ReadBlogRequest{BlogId: "fake id"}
+	_, err := c.ReadBlog(context.Background(), req)
+	if err != nil {
+		fmt.Printf("Error happened while reading: %v\n", err)
+	}
+
+	res, err := c.ReadBlog(context.Background(), &blogpb.ReadBlogRequest{BlogId: blog.GetId()})
+	if err != nil {
+		return errors.Wrap(err, "failed to read blog")
+	}
+
+	fmt.Printf("Blog was read: %v\n", res)
 	return nil
 }
