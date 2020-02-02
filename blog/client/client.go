@@ -45,6 +45,10 @@ func run() error {
 		return errors.Wrap(err, "failed to update blog")
 	}
 
+	if err := DeleteBlog(c, blog.GetId()); err != nil {
+		return errors.Wrap(err, "failed to delete blog")
+	}
+
 	return nil
 }
 
@@ -95,5 +99,17 @@ func UpdateBlog(c blogpb.BlogServiceClient, blog *blogpb.Blog) error {
 	}
 
 	fmt.Printf("Blog was updated: %v\n", res.GetBlog())
+	return nil
+}
+
+// DeleteBlog updates a given blog with the new blog fields
+func DeleteBlog(c blogpb.BlogServiceClient, id string) error {
+	fmt.Printf("Deleting blog with id: %v\n", id)
+	_, err := c.DeleteBlog(context.Background(), &blogpb.DeleteBlogRequest{BlogId: id})
+	if err != nil {
+		return errors.Wrap(err, "failed to update blog")
+	}
+
+	fmt.Printf("Blog was deleted\n")
 	return nil
 }
