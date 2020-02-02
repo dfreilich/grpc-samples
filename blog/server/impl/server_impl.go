@@ -78,9 +78,48 @@ func (s Server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*blo
 	}, nil
 }
 
+// UpdateBlog updates a blog post
+func (s Server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) (*blogpb.UpdateBlogResponse, error) {
+	fmt.Println("Update blog request")
+	blog := req.GetBlog()
+	oid, err := primitive.ObjectIDFromHex(blog.GetId())
+	if err != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Cannot parse ID: %v", blog.GetId()),
+		)
+	}
+
+	data := &Item{}
+	filter := bson.M{"_id": oid}
+	res := s.Collection.FindOne(context.Background(), filter)
+	if err := res.Decode(data); err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Cannot find blog with specified ID: %v", oid),
+		)
+	}
+
+	data.AuthorID = blog.GetAuthorId()
+	data.Content = blog.GetContent()
+	data.Title = blog.GetTitle()
+	_, err = s.Collection.ReplaceOne(context.Background(), filter, data)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Cannot update object in MongoDB: %v", err),
+		)
+	}
+	fmt.Printf("Blog was updated with response: %v\n", data)
+
+	return &blogpb.UpdateBlogResponse{
+		Blog: convertItemToBlog(*data, ""),
+	}, nil
+}
+
 func convertItemToBlog(item Item, id string) *blogpb.Blog {
 	blog := blogpb.Blog{
-		Id:       item.ID.String(),
+		Id:       item.ID.Hex(),
 		AuthorId: item.AuthorID,
 		Title:    item.Title,
 		Content:  item.Content,

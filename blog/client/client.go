@@ -36,8 +36,13 @@ func run() error {
 		return errors.Wrap(err, "failed to create blog")
 	}
 
-	if err := ReadBlog(c, *blog); err != nil {
+	if err := ReadBlog(c, blog); err != nil {
 		return errors.Wrap(err, "failed to read blog")
+	}
+
+	blog.Title = "My First Blog (edited)"
+	if err := UpdateBlog(c, blog); err != nil {
+		return errors.Wrap(err, "failed to update blog")
 	}
 
 	return nil
@@ -65,7 +70,7 @@ func CreateBlog(c blogpb.BlogServiceClient) (*blogpb.Blog, error) {
 }
 
 // ReadBlog reads a blog post
-func ReadBlog(c blogpb.BlogServiceClient, blog blogpb.Blog) error {
+func ReadBlog(c blogpb.BlogServiceClient, blog *blogpb.Blog) error {
 	req := &blogpb.ReadBlogRequest{BlogId: "fake id"}
 	_, err := c.ReadBlog(context.Background(), req)
 	if err != nil {
@@ -78,5 +83,17 @@ func ReadBlog(c blogpb.BlogServiceClient, blog blogpb.Blog) error {
 	}
 
 	fmt.Printf("Blog was read: %v\n", res)
+	return nil
+}
+
+// UpdateBlog updates a given blog with the new blog fields
+func UpdateBlog(c blogpb.BlogServiceClient, blog *blogpb.Blog) error {
+	fmt.Printf("Updating blog with: %v\n", blog)
+	res, err := c.UpdateBlog(context.Background(), &blogpb.UpdateBlogRequest{Blog: blog})
+	if err != nil {
+		return errors.Wrap(err, "failed to update blog")
+	}
+
+	fmt.Printf("Blog was updated: %v\n", res.GetBlog())
 	return nil
 }
