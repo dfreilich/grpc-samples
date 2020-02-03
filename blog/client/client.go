@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/dfreilich/grpc-samples/blog/blogpb"
@@ -47,6 +48,11 @@ func run() error {
 
 	if err := DeleteBlog(c, blog.GetId()); err != nil {
 		return errors.Wrap(err, "failed to delete blog")
+	}
+
+	fmt.Println("Listing remaining blogs")
+	if err := ListBlog(c); err != nil {
+		return errors.Wrap(err, "failed to list blogs")
 	}
 
 	return nil
@@ -112,4 +118,29 @@ func DeleteBlog(c blogpb.BlogServiceClient, id string) error {
 
 	fmt.Printf("Blog was deleted\n")
 	return nil
+}
+
+// ListBlog lists all blog posts
+func ListBlog(c blogpb.BlogServiceClient) error {
+	fmt.Println("Listing Blog posts")
+
+	resStream, err := c.ListBlog(context.Background(), &blogpb.ListBlogRequest{})
+	if err != nil {
+		return errors.Wrap(err, "error while calling ListBlog RPC")
+	}
+	for {
+		msg, err := resStream.Recv()
+		if err == io.EOF {
+			// Stream has ended
+			break
+		}
+		if err != nil {
+			return errors.Wrap(err, "error while reading stream")
+		}
+
+		fmt.Printf("Response from ListBlog: %v\n", msg.GetBlog())
+	}
+
+	return nil
+
 }

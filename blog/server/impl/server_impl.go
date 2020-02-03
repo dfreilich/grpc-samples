@@ -147,6 +147,36 @@ func (s Server) DeleteBlog(ctx context.Context, req *blogpb.DeleteBlogRequest) (
 	return &blogpb.DeleteBlogResponse{BlogId: req.GetBlogId()}, nil
 }
 
+// ListBlog lists all blog posts
+func (s Server) ListBlog(req *blogpb.ListBlogRequest, stream blogpb.BlogService_ListBlogServer) error {
+	fmt.Println("Listing blogs")
+	cur, err := s.Collection.Find(context.Background(), bson.M{})
+	if err != nil {
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Cannot list object in MongoDB: %v", err),
+		)
+	}
+	defer cur.Close(context.Background())
+
+	for cur.Next(context.Background()) {
+		data := &Item{}
+		if err := cur.Decode(data); err != nil {
+			return status.Errorf(
+				codes.Internal,
+				fmt.Sprintf("Error while decoding data from MongoDB: %v", err))
+		}
+		stream.Send(&blogpb.ListBlogResponse{Blog: convertItemToBlog(*data, "")})
+	}
+	if err := cur.Err(); err != nil {
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Unknown internal error: %v", err))
+	}
+
+	return nil
+}
+
 func convertItemToBlog(item Item, id string) *blogpb.Blog {
 	blog := blogpb.Blog{
 		Id:       item.ID.Hex(),
