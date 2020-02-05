@@ -56,7 +56,7 @@ func run() error {
 
 	opts := []grpc.ServerOption{}
 	s := grpc.NewServer(opts...)
-
+	defer s.Stop()
 	blogpb.RegisterBlogServiceServer(s, &blog.Server{
 		Collection: collection,
 	})
@@ -73,8 +73,6 @@ func run() error {
 	}()
 
 	<-ch
-	fmt.Println("Stopping the server")
-	s.Stop()
 
 	return nil
 }
