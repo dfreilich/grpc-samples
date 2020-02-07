@@ -28,8 +28,11 @@ func run() error {
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to listen on address %s", listenAddress))
 	}
+	defer lis.Close()
 
 	s := grpc.NewServer()
+	defer s.Stop()
+
 	calculatorpb.RegisterCalculatorServiceServer(s, &Server{})
 	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {

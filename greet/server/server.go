@@ -30,6 +30,7 @@ func run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to listen")
 	}
+	defer lis.Close()
 
 	certFile := "ssl/server.crt"
 	keyFile := "ssl/server.pem"
@@ -39,6 +40,7 @@ func run() error {
 	}
 	opts := grpc.Creds(creds)
 	s := grpc.NewServer(opts)
+	defer s.Stop()
 
 	greetpb.RegisterGreetServiceServer(s, &Server{})
 	reflection.Register(s)
